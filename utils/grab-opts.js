@@ -1,10 +1,13 @@
-module.exports = function(options, prefix) {
-  var opts = {};
-  var len = prefix.length;
-  for (var key in options) {
-    if (key.substr(0, len) === prefix) {
-      opts[key.substr(len)] = options[key];
-    }
+/**
+ * Collects all object attributes that starts with a certain
+ * prefix
+*/
+module.exports = (options, prefix) => {
+  const collectPropsWithPrefix = (xs, key) => {
+    if (key.includes(prefix)) xs[key.replace(prefix, '')] = options[key]
+    return xs
   }
-  return opts;
+
+  return Object.keys(options)
+    .reduce(collectPropsWithPrefix, {})
 };
