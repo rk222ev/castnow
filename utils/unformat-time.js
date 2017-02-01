@@ -1,19 +1,13 @@
-module.exports = function (string) {
-  var timeArray = string.split(':'),
-      seconds = 0;
-  // turn hours and minutes into seconds and add them all up
-  if (timeArray.length === 3) {
-    // hours
-    seconds = seconds + (parseInt(timeArray[0]) * 60 * 60);
-    // minutes
-    seconds = seconds + (parseInt(timeArray[1]) * 60);
-    // seconds
-    seconds = seconds + parseInt(timeArray[2]);
-  } else if (timeArray.length === 2) {
-    // minutes
-    seconds = seconds + (parseInt(timeArray[0]) * 60);
-    // seconds
-    seconds = seconds + parseInt(timeArray[1]);
-  }
-  return seconds;
+const calcHours = n => n ? n * 60 * 60 : 0
+const calcMinutes = n => n *  60
+
+/**
+ * Parses a timestamp string (hh:mm:ss or mm:ss)
+ * and returns the total amount of seconds
+*/
+module.exports = string => {
+  const [seconds, minutes, hours] = string.split(':')
+        .reverse()
+        .map(x => x ? parseInt(x) : x)
+  return calcHours(hours) + calcMinutes(minutes) + seconds
 };
