@@ -22,55 +22,9 @@ const transcode = require('./plugins/transcode')
 const subtitles = require('./plugins/subtitles')
 const stdin = require('./plugins/stdin')
 
-if (opts.help) {
-  return console.log([
-    '',
-    'Usage: castnow [<media>, <media>, ...] [OPTIONS]',
-    '',
-    'Option                   Meaning',
-    '--tomp4                  Convert file to mp4 during playback',
-    '--device <name>          The name of the Chromecast device that should be used',
-    '--address <ip>           The IP address or hostname of your Chromecast device',
-    '--subtitles <path/url>   Path or URL to an SRT or VTT file',
-    '--subtitle-scale <scale> Subtitle font scale',
-    '--subtitle-color <color> Subtitle font RGBA color',
-    '--subtitle-port <port>   Specify the port to be used for serving subtitles',
-    '--myip <ip>              Your local IP address',
-    '--quiet                  No output',
-    '--peerflix-* <value>     Pass options to peerflix',
-    '--ffmpeg-* <value>       Pass options to ffmpeg',
-    '--type <type>            Explicitly set the mime-type (e.g. "video/mp4")',
-    '--bypass-srt-encoding    Disable automatic UTF-8 encoding of SRT subtitles',
-    '--seek <hh:mm:ss>        Seek to the specified time on start using the format hh:mm:ss or mm:ss',
-    '--loop                   Loop over playlist, or file, forever',
-    '--shuffle                Play in random order',
-    '--recursive              List all files in directories recursively',
-    '--volume-step <step>     Step at which the volume changes. Helpful for speakers that are softer or louder than normal. Value ranges from 0 to 1 (e.g. ".05")',
-    '--localfile-port <port>  Specify the port to be used for serving a local file',
-    '--transcode-port <port>  Specify the port to be used for serving a transcoded file',
-    '--torrent-port <port>    Specify the port to be used for serving a torrented file',
-    '--stdin-port <port>      Specify the port to be used for serving a file read from stdin',
-    '--command <key1>,<key2>  Execute key command(s) (where each <key> is one of the keys listed below)',
-    '--exit                   Exit when playback begins or --command completes',
+const printHelp = require('./lib/print-help')
 
-    '--help                   This help screen',
-    '',
-    'Player controls',
-    '',
-    'Key                      Action',
-    'space                    Toggle between play and pause',
-    'm                        Toggle mute',
-    't                        Toggle subtitles',
-    'up                       Volume Up',
-    'down                     Volume Down',
-    'left                     Seek backward',
-    'right                    Seek forward',
-    'n                        Next in playlist',
-    's                        Stop playback',
-    'quit                     Quit',
-    ''
-  ].join('\n'))
-}
+if (opts.help) return printHelp()
 
 if (opts._.length) {
   opts.playlist = opts._.map(function(item) {
