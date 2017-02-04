@@ -1,13 +1,13 @@
-var fs = require('fs');
-var util = require('util');
-var rangeParser = require('range-parser');
-var mime = require('mime');
+const fs = require('fs');
+const util = require('util');
+const rangeParser = require('range-parser');
+const mime = require('mime');
 
-module.exports = function(req, res, filePath) {
-  var stat = fs.statSync(filePath);
-  var total = stat.size;
-  var range = req.headers.range;
-  var type = mime.lookup(filePath);
+module.exports = (req, res, filePath) => {
+  const stat = fs.statSync(filePath);
+  const total = stat.size;
+  const range = req.headers.range;
+  const type = mime.lookup(filePath);
 
   res.setHeader('Content-Type', type);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,9 +18,9 @@ module.exports = function(req, res, filePath) {
     return fs.createReadStream(filePath).pipe(res);
   }
 
-  var part = rangeParser(total, range)[0];
-  var chunksize = (part.end - part.start) + 1;
-  var file = fs.createReadStream(filePath, {start: part.start, end: part.end});
+  const part = rangeParser(total, range)[0];
+  const chunksize = (part.end - part.start) + 1;
+  const file = fs.createReadStream(filePath, {start: part.start, end: part.end});
 
   res.setHeader('Content-Range', 'bytes ' + part.start + '-' + part.end + '/' + total);
   res.setHeader('Accept-Ranges', 'bytes');
