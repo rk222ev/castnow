@@ -4,7 +4,7 @@
   "description": "commandline chromecast player",
   "main": "index.js",
   "bin": {
-    "castnow": "./index.js"
+    "castnow": "./src/index.js"
   },
   "scripts": {
     "test": "jest"

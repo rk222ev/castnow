@@ -1,4 +1,4 @@
-unformatTime = require('../../utils/unformat-time.js')
+unformatTime = require('../../src/utils/unformat-time.js')
 
 const testData = [
   ['01:02:03', 3723],

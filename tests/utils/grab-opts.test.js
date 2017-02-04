@@ -1,4 +1,4 @@
-const grabOpts = require('../../utils/grab-opts.js');
+const grabOpts = require('../../src/utils/grab-opts.js');
 
 const options = { disableSeek: true, disableX: false }
 

@@ -1,4 +1,4 @@
-const serveMp4 = require('../../utils/serve-mp4.js')
+const serveMp4 = require('../../src/utils/serve-mp4.js')
 
 jest.mock('range-parser');
 const rangeParser = require('range-parser');
