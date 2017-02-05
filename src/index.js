@@ -23,6 +23,7 @@ const subtitles = require('./plugins/subtitles')
 const stdin = require('./plugins/stdin')
 
 const printHelp = require('./lib/print-help')
+const { getVolumeStep } = require('./lib/volume')
 
 if (opts.help) return printHelp()
 
@@ -40,33 +41,12 @@ if (opts.quiet || opts.exit || process.env.DEBUG) {
   ui.hide()
 }
 
-var volumeStep = 0.05
-var stepOption = opts['volume-step']
-
-if (stepOption) {
-  var parsed = parseFloat(stepOption)
-
-  if (isNaN(parsed)) {
-    fatalError('invalid --volume-step')
-  }
-
-  if (parsed < 0 || parsed > 1) {
-    fatalError('--volume-step must be between 0 and 1')
-  }
-
-  volumeStep = parsed
-}
+const [ volumeStep, error ] = getVolumeStep(opts['volume-step'])
+if (error) fatalError(error)
 
 debug('volume step: %s', volumeStep)
 
 ui.showLabels('state')
-
-function fatalError(err) {
-  ui.hide(err)
-  debug(err)
-  console.log(chalk.red(err))
-  process.exit()
-}
 
 var last = function(fn, l) {
   return function() {
