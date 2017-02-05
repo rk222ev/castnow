@@ -27,14 +27,7 @@ const { getVolumeStep } = require('./lib/volume')
 
 if (opts.help) return printHelp()
 
-if (opts._.length) {
-  opts.playlist = opts._.map(function(item) {
-    return {
-      path: item
-    }
-  })
-}
-
+if (opts._.length) opts.playlist = opts._.map(path => ({ path }))
 delete opts._
 
 if (opts.quiet || opts.exit || process.env.DEBUG) {
