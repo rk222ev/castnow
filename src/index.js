@@ -30,9 +30,7 @@ if (opts.help) return printHelp()
 if (opts._.length) opts.playlist = opts._.map(path => ({ path }))
 delete opts._
 
-if (opts.quiet || opts.exit || process.env.DEBUG) {
-  ui.hide()
-}
+if (opts.quiet || opts.exit || process.env.DEBUG) ui.hide()
 
 const [ volumeStep, error ] = getVolumeStep(opts['volume-step'])
 if (error) fatalError(error)
@@ -41,16 +39,16 @@ debug('volume step: %s', volumeStep)
 
 ui.showLabels('state')
 
-var last = function(fn, l) {
-  return function() {
-    var args = Array.prototype.slice.call(arguments)
+const last = (fn, l) => {
+  return () => {
+    let args = Array.prototype.slice.call(arguments)
     args.push(l)
     l = fn.apply(null, args)
     return l
   }
 }
 
-var ctrl = function(err, p, ctx) {
+let ctrl = function(err, p, ctx) {
   if (err) {
     ui.hide()
     debug('player error: %o', err)
@@ -58,9 +56,9 @@ var ctrl = function(err, p, ctx) {
     process.exit()
   }
 
-  var playlist = ctx.options.playlist
-  var volume
-  var is_keyboard_interactive = process.stdin.isTTY || false
+  let playlist = ctx.options.playlist
+  let volume
+  let is_keyboard_interactive = process.stdin.isTTY || false
 
   if (is_keyboard_interactive) {
     keypress(process.stdin)
@@ -86,21 +84,21 @@ var ctrl = function(err, p, ctx) {
     })
   }
 
-  var seek = debouncedSeeker(function(offset) {
+  let seek = debouncedSeeker(function(offset) {
     if (ctx.options.disableSeek || offset === 0) return
-    var seconds = Math.max(0, (p.getPosition() / 1000) + offset)
+    let seconds = Math.max(0, (p.getPosition() / 1000) + offset)
     debug('seeking to %s', seconds)
     p.seek(seconds)
   }, 500)
 
-  var updateTitle = function() {
+  let updateTitle = function() {
     p.getStatus(function(err, status) {
       if (!status || !status.media ||
           !status.media.metadata ||
           !status.media.metadata.title) return
 
-      var metadata = status.media.metadata
-      var title
+      let metadata = status.media.metadata
+      let title
       if (metadata.artist) {
         title = metadata.artist + ' - ' + metadata.title
       } else {
@@ -112,28 +110,26 @@ var ctrl = function(err, p, ctx) {
     })
   }
 
-  var initialSeek = function() {
-    var seconds = unformatTime(ctx.options.seek)
+  let initialSeek = function() {
+    let seconds = unformatTime(ctx.options.seek)
     debug('seeking to %s', seconds)
     p.seek(seconds)
   }
 
   p.on('playing', updateTitle)
 
-  if (!ctx.options.disableSeek && ctx.options.seek) {
-    p.once('playing', initialSeek)
-  }
+  if (!ctx.options.disableSeek && ctx.options.seek) p.once('playing', initialSeek)
 
   updateTitle()
 
-  var nextInPlaylist = function() {
+  let nextInPlaylist = function() {
     if (ctx.mode !== 'launch') return
     if (!playlist.length) return process.exit()
     p.stop(function() {
       ui.showLabels('state')
       debug('loading next in playlist: %o', playlist[0])
       p.load(playlist[0], noop)
-      var file = playlist.shift()
+      let file = playlist.shift()
       if (ctx.options.loop) playlist.push(file)
     })
   }
@@ -147,7 +143,7 @@ var ctrl = function(err, p, ctx) {
     return status
   }))
 
-  var keyMappings = {
+  let keyMappings = {
 
     // toggle between play / pause
     space: function() {
@@ -261,17 +257,17 @@ var ctrl = function(err, p, ctx) {
   }
 
   if (opts.command) {
-    var commands = opts.command.split(",")
+    let commands = opts.command.split(",")
     commands.forEach(function(command) {
       if (!keyMappings[command]) {
         fatalError('invalid --command: ' + command)
       }
     })
 
-    var index = 0
+    let index = 0
     function run_commands() {
       if (index < commands.length) {
-        var command = commands[index++]
+        let command = commands[index++]
         keyMappings[command]()
         p.getStatus(run_commands)
       } else {
@@ -285,13 +281,13 @@ var ctrl = function(err, p, ctx) {
   }
 }
 
-var capitalize = function(str) {
+const capitalize = function(str) {
   return str.substr(0, 1).toUpperCase() + str.substr(1)
 }
 
-var logState = (function() {
-  var inter
-  var dots = circulate(['.', '..', '...', '....'])
+let logState = (function() {
+  let inter
+  let dots = circulate(['.', '..', '...', '....'])
   return function(status) {
     if (inter) clearInterval(inter)
     debug('player status: %s', status)
@@ -302,7 +298,7 @@ var logState = (function() {
   }
 })()
 
-player.use(function(ctx, next) {
+player.use((ctx, next) => {
   ctx.on('status', logState)
   next()
 })
@@ -315,30 +311,20 @@ player.use(localfile)
 player.use(transcode)
 player.use(subtitles)
 
-player.use(function(ctx, next) {
+player.use((ctx, next) => {
   if (ctx.mode !== 'launch') return next()
   if (ctx.options.shuffle)
     ctx.options.playlist = shuffle(ctx.options.playlist)
   ctx.options = xtend(ctx.options, ctx.options.playlist[0])
-  var file = ctx.options.playlist.shift()
+  let file = ctx.options.playlist.shift()
   if (ctx.options.loop) ctx.options.playlist.push(file)
   next()
 })
 
-if (!opts.playlist) {
-  debug('attaching...')
-  player.attach(opts, ctrl)
-} else {
-  debug('launching...')
-  player.launch(opts, ctrl)
-}
+debug(opts.playlist ? 'launching...' : 'attaching' )
+player[opts.playlist ?  'launch' : 'attach'](opts, ctrl)
 
-process.on('SIGINT', function() {
-  process.exit()
-})
-
-process.on('exit', function() {
-  ui.hide()
-})
+process.on('SIGINT', () => process.exit())
+process.on('exit', () => ui.hide())
 
 module.exports = player
