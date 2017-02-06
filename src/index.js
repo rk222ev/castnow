@@ -48,7 +48,7 @@ const last = (fn, l) => {
   }
 }
 
-let ctrl = function(err, p, ctx) {
+const ctrl = (err, p, ctx) => {
   if (err) {
     ui.hide()
     debug('player error: %o', err)
@@ -56,9 +56,9 @@ let ctrl = function(err, p, ctx) {
     process.exit()
   }
 
-  let playlist = ctx.options.playlist
+  const playlist = ctx.options.playlist
+  const is_keyboard_interactive = process.stdin.isTTY || false
   let volume
-  let is_keyboard_interactive = process.stdin.isTTY || false
 
   if (is_keyboard_interactive) {
     keypress(process.stdin)
@@ -66,51 +66,47 @@ let ctrl = function(err, p, ctx) {
     process.stdin.resume()
   }
 
-  ctx.once('closed', function() {
+  ctx.once('closed', () => {
     ui.hide()
     console.log(chalk.red('lost connection'))
     process.exit()
   })
 
   // get initial volume
-  p.getVolume(function(err, status) {
+  p.getVolume((err, status) => {
     volume = status
   })
 
   if (!ctx.options.disableTimeline) {
-    p.on('position', function(pos) {
+    p.on('position', (pos) => {
       ui.setProgress(pos.percent)
       ui.render()
     })
   }
 
-  let seek = debouncedSeeker(function(offset) {
+  const seek = debouncedSeeker(offset => {
     if (ctx.options.disableSeek || offset === 0) return
-    let seconds = Math.max(0, (p.getPosition() / 1000) + offset)
+    const seconds = Math.max(0, (p.getPosition() / 1000) + offset)
     debug('seeking to %s', seconds)
     p.seek(seconds)
   }, 500)
 
-  let updateTitle = function() {
-    p.getStatus(function(err, status) {
+  let updateTitle = () => {
+    p.getStatus((err, status) => {
       if (!status || !status.media ||
           !status.media.metadata ||
           !status.media.metadata.title) return
 
-      let metadata = status.media.metadata
-      let title
-      if (metadata.artist) {
-        title = metadata.artist + ' - ' + metadata.title
-      } else {
-        title = metadata.title
-      }
+      const getTitle = ({ artist, title }) => artist ? `${artist} - ${title}}` : title
+      const title = getTitle(status.media.metadata)
+
       ui.setLabel('source', 'Source', title)
       ui.showLabels('state', 'source')
       ui.render()
     })
   }
 
-  let initialSeek = function() {
+  let initialSeek = () => {
     let seconds = unformatTime(ctx.options.seek)
     debug('seeking to %s', seconds)
     p.seek(seconds)
@@ -122,19 +118,18 @@ let ctrl = function(err, p, ctx) {
 
   updateTitle()
 
-  let nextInPlaylist = function() {
+  const nextInPlaylist = () => {
     if (ctx.mode !== 'launch') return
     if (!playlist.length) return process.exit()
-    p.stop(function() {
+    p.stop(() => {
       ui.showLabels('state')
       debug('loading next in playlist: %o', playlist[0])
       p.load(playlist[0], noop)
-      let file = playlist.shift()
-      if (ctx.options.loop) playlist.push(file)
+      if (ctx.options.loop) playlist.push(playlist.shift())
     })
   }
 
-  p.on('status', last(function(status, memo) {
+  p.on('status', last((status, memo) => {
     if (opts.exit && status.playerState == 'PLAYING') process.exit()
     if (status.playerState !== 'IDLE') return
     if (status.idleReason !== 'FINISHED') return
@@ -143,137 +138,78 @@ let ctrl = function(err, p, ctx) {
     return status
   }))
 
-  let keyMappings = {
-
-    // toggle between play / pause
-    space: function() {
-      if (p.currentSession.playerState === 'PLAYING') {
-        p.pause()
-      } else if (p.currentSession.playerState === 'PAUSED') {
-        p.play()
-      }
-    },
+  const keyMappings = {
+    space: () => p.currentSession.playerState == 'PLAYING' ? p.pause() : p.play(),
 
     // toggle between mute / unmute
-    m: function() {
-      if(!volume) {
-        return
-      } else if (volume.muted) {
-        p.unmute(function(err, status) {
-          if (err) return
-          volume = status
-        })
-      } else {
-        p.mute(function(err, status) {
-          if (err) return
-          volume = status
-        })
+    m: () => {
+      const f = (err, status) => {
+        if (!err) volume = status
       }
+      if (volume) volume.muted ? p.unmute(f) : p.mute(f)
     },
 
     t: function() {
-      if (!p.currentSession.media.tracks) { return }
-      var sessionRequestBody = {
-        type: 'EDIT_TRACKS_INFO'
-      }
+      if (!p.currentSession.media.tracks) return
+      const type = 'EDIT_TRACKS_INFO'
       sessionRequestBody.activeTrackIds = p.currentSession.activeTrackIds ? [] : [1]
-      p.sessionRequest(sessionRequestBody)
+      p.sessionRequest({ type })
     },
 
     // volume up
-    up: function() {
-      if (!volume || volume.level >= 1) {
-        return
-      }
-
-      var newVolume = Math.min(volume.level + volumeStep, 1)
-
-      p.setVolume(newVolume, function(err, status) {
-        if (err) {
-          return
-        }
-
+    up: () => {
+      if (!volume || volume.level >= 1) return
+      const newVolume = Math.min(volume.level + volumeStep, 1)
+      p.setVolume(newVolume, (err, status) => {
+        if (err) return
         debug("volume up: %s", status.level)
-
         volume = status
       })
     },
 
     // volume down
-    down: function() {
-      if (!volume || volume.level <= 0) {
-        return
-      }
-
-      var newVolume = Math.max(volume.level - volumeStep, 0)
-
-      p.setVolume(newVolume, function(err, status) {
-        if (err) {
-          return
-        }
-
+    down: () => {
+      if (!volume || volume.level <= 0) return
+      const newVolume = Math.max(volume.level - volumeStep, 0)
+      p.setVolume(newVolume, (err, status) => {
+        if (err) return
         debug("volume down: %s", status.level)
-
         volume = status
       })
     },
 
-    // next item in playlist
-    n: function() {
-      nextInPlaylist()
-    },
-
-    // stop playback
-    s: function() {
-      p.stop()
-    },
-
-    // quit
-    q: function() {
-      process.exit()
-    },
-
-    // Rewind, one "seekCount" per press
-    left: function() {
-      seek(-30)
-    },
-
-    // Forward, one "seekCount" per press
-    right: function() {
-      seek(30)
-    }
+    n: () => nextInPlaylist(),
+    s: () => p.stop(),
+    q: () => process.exit(),
+    left: () => seek(-30),
+    right: () => seek(30)
   }
 
   if (is_keyboard_interactive) {
-    process.stdin.on('keypress', function(ch, key) {
+    process.stdin.on('keypress', (ch, key) => {
       if (key && key.name && keyMappings[key.name]) {
         debug('key pressed: %s', key.name)
         keyMappings[key.name]()
       }
-      if (key && key.ctrl && key.name == 'c') {
-        process.exit()
-      }
+      if (key && key.ctrl && key.name == 'c') process.exit()
     })
   }
 
   if (opts.command) {
     let commands = opts.command.split(",")
-    commands.forEach(function(command) {
-      if (!keyMappings[command]) {
-        fatalError('invalid --command: ' + command)
-      }
+
+    commands.forEach(c => {
+      if (!keyMappings[c]) fatalError(`invalid --command: ${c}`)
     })
 
     let index = 0
-    function run_commands() {
+    const run_commands = () => {
       if (index < commands.length) {
         let command = commands[index++]
         keyMappings[command]()
         p.getStatus(run_commands)
-      } else {
-        if (opts.exit) {
-          process.exit()
-        }
+      } else if (opts.exit) {
+        process.exit()
       }
     }
 
@@ -285,18 +221,17 @@ const capitalize = function(str) {
   return str.substr(0, 1).toUpperCase() + str.substr(1)
 }
 
-let logState = (function() {
-  let inter
-  let dots = circulate(['.', '..', '...', '....'])
-  return function(status) {
-    if (inter) clearInterval(inter)
-    debug('player status: %s', status)
-    inter = setInterval(function() {
-      ui.setLabel('state', 'State', capitalize(status) + dots())
-      ui.render()
-    }, 300)
-  }
-})()
+let inter
+let dots = circulate(['.', '..', '...', '....'])
+
+const logState = status => {
+  if (inter) clearInterval(inter)
+  debug('player status: %s', status)
+  inter = setInterval(() => {
+    ui.setLabel('state', 'State', capitalize(status) + dots())
+    ui.render()
+  }, 300)
+}
 
 player.use((ctx, next) => {
   ctx.on('status', logState)
