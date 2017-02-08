@@ -1,30 +1,21 @@
-var http = require('http')
-var internalIp = require('internal-ip')
-var path = require('path')
-var serveMp4 = require('../utils/serve-mp4')
-var debug = require('debug')('castnow:localfile')
-var fs = require('fs')
+const http = require('http')
+const internalIp = require('internal-ip')
+const path = require('path')
+const serveMp4 = require('../utils/serve-mp4')
+const debug = require('debug')('castnow:localfile')
+const fs = require('fs')
 
-var isFile = function(item) {
-  return fs.existsSync(item.path) && fs.statSync(item.path).isFile()
-}
+const isFile = x => fs.existsSync(x.path) && fs.statSync(x.path).isFile()
 
-var contains = function(arr, cb) {
-  for (var i=0, len=arr.length; i<len; i++) {
-    if (cb(arr[i], i)) return true
-  }
-  return false
-}
-
-var localfile = function(ctx, next) {
+const localfile = (ctx, next) => {
   if (ctx.mode !== 'launch') return next()
-  if (!contains(ctx.options.playlist, isFile)) return next()
+  if (!ctx.options.playlist.every(isFile)) return next()
 
-  var list = ctx.options.playlist.slice(0)
-  var ip = (ctx.options.myip || internalIp())
-  var port = ctx.options['localfile-port'] || 4100
+  const list = ctx.options.playlist.slice(0)
+  const ip = (ctx.options.myip || internalIp())
+  const port = ctx.options['localfile-port'] || 4100
 
-  ctx.options.playlist = list.map(function(item, idx) {
+  ctx.options.playlist = list.map((item, idx) => {
     if (!isFile(item)) return item
     return {
       path: 'http://' + ip + ':' + port + '/' + idx,
