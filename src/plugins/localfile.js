@@ -1,9 +1,9 @@
+const debug = require('debug')('castnow:localfile')
+const fs = require('fs')
 const http = require('http')
 const internalIp = require('internal-ip')
 const path = require('path')
 const serveMp4 = require('../utils/serve-mp4')
-const debug = require('debug')('castnow:localfile')
-const fs = require('fs')
 
 const isFile = x => fs.existsSync(x.path) && fs.statSync(x.path).isFile()
 
@@ -16,14 +16,15 @@ const localfile = (ctx, next) => {
   const port = ctx.options['localfile-port'] || 4100
 
   ctx.options.playlist = list.map((item, idx) => {
-    if (!isFile(item)) return item
-    return {
-      path: 'http://' + ip + ':' + port + '/' + idx,
-      type: 'video/mp4',
-      media: {
-        metadata: {
-          filePath: item.path,
-          title: path.basename(item.path)
+    if (isFile(item)) {
+      return {
+        path: 'http://' + ip + ':' + port + '/' + idx,
+        type: 'video/mp4',
+        media: {
+          metadata: {
+            filePath: item.path,
+            title: path.basename(item.path)
+          }
         }
       }
     }
