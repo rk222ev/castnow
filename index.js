@@ -5,7 +5,6 @@ var path = require('path');
 var player = require('chromecast-player')();
 var keypress = require('keypress');
 var ui = require('playerui')();
-var xtend = require('xtend');
 var shuffle = require('./utils/shuffle');
 var unformatTime = require('./utils/unformat-time');
 var debug = require('debug')('castnow');
@@ -27,6 +26,7 @@ var rcOpts = [];
 try {
   rcOpts = fs.readFileSync(path.join(home, '.castnowrc')).toString().trim().split(/\s+/);
 } catch(err) {}
+
 
 var optConfig = {
   boolean: "tomp4 quiet bypass-srt-encoding loop shuffle recursive exit help".split(/\s+/),
@@ -470,7 +470,7 @@ player.use(function(ctx, next) {
   if (ctx.mode !== 'launch') return next();
   if (ctx.options.shuffle)
     ctx.options.playlist = shuffle(ctx.options.playlist);
-  ctx.options = xtend(ctx.options, ctx.options.playlist[0]);
+  ctx.options = Object.assign(ctx.options, ctx.options.playlist[0]);
   var file = ctx.options.playlist.shift();
   if (ctx.options.loop)
     ctx.options.playlist.push(file);
