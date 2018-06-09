@@ -1,8 +1,10 @@
-var readTorrent = require('read-torrent');
-var peerflix = require('peerflix');
-var internalIp = require('internal-ip');
-var grabOpts = require('../utils/grab-opts');
 var debug = require('debug')('castnow:torrent');
+var grabOpts = require('../utils/grab-opts');
+var internalIp = require('internal-ip');
+var parseTorrent = require('parse-torrent');
+var peerflix = require('peerflix');
+var request = require('request');
+
 
 var torrent = function(ctx, next) {
   if (ctx.mode !== 'launch') return next();
@@ -15,7 +17,7 @@ var torrent = function(ctx, next) {
       !/torrent$/.test(path) &&
       !ctx.options.torrent) return next();
 
-  readTorrent(path, function(err, torrent) {
+  parseTorrent.remote(path, function (err, torrent) {
     if (err) {
       debug('error reading torrent: %o', err);
       return next();
