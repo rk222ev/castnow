@@ -29,7 +29,7 @@ var localfile = function(ctx, next) {
 
   ctx.options.playlist = list.map(function(item, idx) {
     if (!isFile(item)) return item;
-    var mimeType = mime.lookup(item.path);
+    var mimeType = mime.getType(item.path);
     var type = mimeType.split('/')[0];
     if (type !== 'audio' && type !== 'video') mimeType = 'video/mp4';
     return {

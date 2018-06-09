@@ -7,7 +7,7 @@ module.exports = function(req, res, filePath) {
   var stat = fs.statSync(filePath);
   var total = stat.size;
   var range = req.headers.range;
-  var type = mime.lookup(filePath);
+  var type = mime.getType(filePath);
 
   res.setHeader('Content-Type', type);
   res.setHeader('Access-Control-Allow-Origin', '*');

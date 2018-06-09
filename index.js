@@ -451,7 +451,7 @@ player.use(function(ctx, next) {
     ctx.options.playlist.map(function(item){
       if (!item.type) {
         // These will be URLs (the MIME type for files is filled in by the localfile plugin).
-        var mimeType = mime.lookup(item.path);
+        var mimeType = mime.getType(item.path);
         var type = mimeType.split('/')[0];
         if (type === 'audio' || type === 'video') item.type = mimeType;
       }
