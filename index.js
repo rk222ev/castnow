@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 var player = require('chromecast-player')();
-var chalk = require('chalk');
 var keypress = require('keypress');
 var ui = require('playerui')();
 var xtend = require('xtend');
@@ -128,10 +127,12 @@ debug('volume step: %s', volumeStep);
 
 ui.showLabels('state');
 
+const logError = str => console.log('\u001B[31m%s\u001B[39m', str);
+
 function fatalError(err) {
   ui.hide(err);
   debug(err);
-  console.log(chalk.red(err));
+  logError(err);
   process.exit();
 }
 
@@ -148,7 +149,7 @@ var ctrl = function(err, p, ctx) {
   if (err) {
     ui.hide();
     debug('player error: %o', err);
-    console.log(chalk.red(err));
+    logError(err);
     process.exit();
   }
 
@@ -165,7 +166,7 @@ var ctrl = function(err, p, ctx) {
 
   ctx.once('closed', function() {
     ui.hide();
-    console.log(chalk.red('lost connection'));
+    logError('lost connection');
     process.exit();
   });
 
