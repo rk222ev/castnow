@@ -6,7 +6,6 @@ var player = require('chromecast-player')();
 var chalk = require('chalk');
 var keypress = require('keypress');
 var ui = require('playerui')();
-var circulate = require('array-loop');
 var xtend = require('xtend');
 var shuffle = require('./utils/shuffle');
 var unformatTime = require('./utils/unformat-time');
@@ -416,9 +415,15 @@ var capitalize = function(str) {
   return str.substr(0, 1).toUpperCase() + str.substr(1);
 };
 
+const cycle = (coll, i = 0) => () => {
+  const el = coll[i];
+  i === coll.length - 1 ? i = 0 : i += 1;
+  return el;
+}
+
 var logState = (function() {
   var inter;
-  var dots = circulate(['.', '..', '...', '....']);
+  var dots = cycle(['.', '..', '...', '....']);
   return function(status) {
     if (inter) clearInterval(inter);
     debug('player status: %s', status);
