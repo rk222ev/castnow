@@ -1,9 +1,11 @@
 var http = require('http');
+var https = require('https');
 var internalIp = require('internal-ip');
-var got = require('got');
 var Transcoder = require('stream-transcoder');
 var grabOpts = require('../utils/grab-opts');
 var debug = require('debug')('castnow:transcode');
+
+const get = (path, cb) => (/https/.test(path) ? https : http).get(path, cb);
 
 var transcode = function(ctx, next) {
   if (ctx.mode !== 'launch' || !ctx.options.tomp4) return next();
@@ -23,31 +25,33 @@ var transcode = function(ctx, next) {
     res.writeHead(200, {
       'Access-Control-Allow-Origin': '*'
     });
-    var s = got(orgPath);
-    s.on('error', function(err) {
-      debug('got error: %o', err);
-    });
 
-    var trans = new Transcoder(s)
-      .videoCodec('h264')
-      .format('mp4')
-      .custom('strict', 'experimental')
-      .on('finish', function() {
-        debug('finished transcoding');
-      })
-      .on('error', function(err) {
-        debug('transcoding error: %o', err);
-      });
-    for (var key in opts) {
-      trans.custom(key, opts[key]);
-    }
+    const onResponse = response => {
+      const trans = new Transcoder(response)
+        .videoCodec('h264')
+        .format('mp4')
+        .custom('strict', 'experimental')
+        .on('finish', function() {
+          debug('finished transcoding');
+        })
+        .on('error', function(err) {
+          debug('transcoding error: %o', err);
+        });
+      for (var key in opts) {
+        trans.custom(key, opts[key]);
+      }
 
-    var args = trans._compileArguments();
-    args = [ '-i', '-' ].concat(args);
-    args.push('pipe:1');
-    debug('spawning ffmpeg %s', args.join(' '));
+      var args = trans._compileArguments();
+      args = [ '-i', '-' ].concat(args);
+      args.push('pipe:1');
+      debug('spawning ffmpeg %s', args.join(' '));
 
-    trans.stream().pipe(res);
+      trans.stream().pipe(res);
+    };
+
+    get(orgPath, onResponse)
+      .on('error', err => debug('got error: %o', err));
+
   }).listen(port);
   debug('started webserver on address %s using port %s', ip, port);
   next();
