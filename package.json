@@ -30,7 +30,7 @@
     "castv2-client": "^1.1.0",
     "chromecast-player": "^0.2.3",
     "debounced-seeker": "^1.0.0",
-    "debug": "^2.1.0",
+    "debug": "^3.1.0",
     "diveSync": "^0.3.0",
     "got": "^1.2.2",
     "internal-ip": "^3.0.1",
